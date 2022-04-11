@@ -25,17 +25,13 @@ class Datum {
 		case 2: {
 			if (PrestupnaGodina(*godina))
 				return 29;
-			else 
+			else
 				return 28;
 			break;
 		}
 		default:
 			break;
 		}
-	}
-	void InkrementDekrementPtr(int* ZaInkrement, int* ZaDekrement) {
-		(* ZaInkrement)++;
-		(* ZaDekrement)--;
 	}
 	void JanuarInkrement() {
 		*mjesec = 1;
@@ -45,10 +41,14 @@ class Datum {
 		*mjesec = 12;
 		(*godina)--;
 	}
+	void InkrementDekrement(int* ZaInkrement, int* ZaDekrement) {
+		(*ZaInkrement)++;
+		(*ZaDekrement)--;
+	}
 public:
 	Datum() {
-		dan = new int(1);
-		mjesec = new int(1);
+		dan = new int(11);
+		mjesec = new int(4);
 		godina = new int(2022);
 	}
 	Datum(int UneseniDan, int UneseniMjesec, int UnesenaGodina) {
@@ -61,35 +61,21 @@ public:
 		delete mjesec; mjesec = NULL;
 		delete godina; godina = NULL;
 	}
-	void NaprijedRacunanje(int BrDanaNaprijed, bool nazad = false) {
-		if (!nazad) {
-			BrDanaNaprijed += (*dan);
-			(*mjesec)--;
-			if (*mjesec < 1) DecembarDekrement();
-			(*dan) = BrojDanaUMjesecu(*mjesec);
-			if (BrDanaNaprijed >= 365)
-				GodineRebalans(&BrDanaNaprijed, nazad);
-			if (BrDanaNaprijed >= 28)
-				MjesecRebalans(&BrDanaNaprijed, nazad);
-			while (*dan > BrojDanaUMjesecu(*mjesec))
-				InkrementDekrementPtr(&BrDanaNaprijed, dan);
-			DaniRebalans(&BrDanaNaprijed, nazad);
-			cout << "Ispis novog datuma " << *dan << "." << *mjesec << "." << *godina << endl;
-		}
-		else {
-			BrDanaNaprijed += (*dan);
-			(*mjesec)--;
-			if (*mjesec < 1) DecembarDekrement();
-			(*dan) = BrojDanaUMjesecu(*mjesec);
-			if (BrDanaNaprijed >= 365)
-				GodineRebalans(&BrDanaNaprijed, nazad);
-			if (BrDanaNaprijed >= 28)
-				MjesecRebalans(&BrDanaNaprijed, nazad);
-			while (*dan > BrojDanaUMjesecu(*mjesec))
-				InkrementDekrementPtr(&BrDanaNaprijed, dan);
-			DaniRebalans(&BrDanaNaprijed, nazad);
-			cout << "Ispis novog datuma " << *dan << "." << *mjesec << "." << *godina << endl;
-		}
+	void NaprijedRacunanje(int BrDanaNaprijed) {
+		BrDanaNaprijed += (*dan);
+		(*mjesec)--;
+		if (*mjesec < 1)
+			DecembarDekrement();
+		(*dan) = BrojDanaUMjesecu(*mjesec);
+		if (BrDanaNaprijed >= 365)
+			GodineNaprijed(&BrDanaNaprijed);
+		if (BrDanaNaprijed >= 28)
+			MjesecNaprijed(&BrDanaNaprijed);
+		// Nisam siguran treba li, 75% da ne treba, da je viska jer se ostalo radi 
+		//while (*dan > BrojDanaUMjesecu(*mjesec))
+		//	InkrementDekrement(&BrDanaNaprijed, dan);
+		RebalansDana(&BrDanaNaprijed);
+		cout << "Ispis novog datuma " << *dan << "." << *mjesec << "." << *godina << endl;
 	}
 	void NazadRacunanje() {
 
@@ -101,90 +87,39 @@ private:
 	bool PrestupnaGodina(int GodinaProvjera) {
 		return ((GodinaProvjera % 4 == 0 && GodinaProvjera % 100 != 0) || GodinaProvjera % 400 == 0);
 	}
-	void GodineRebalans(int* BrDana, bool nazad = false) {
-		if (!nazad) {
-			while (*BrDana >= 365) {
-				if (*mjesec != 2) {
-					if ((*mjesec == 1 && PrestupnaGodina(*godina)) || PrestupnaGodina(*godina + 1)) *BrDana -= 366;
-					else *BrDana -= 365;
-				}
-				else if (*mjesec == 2) {
-					if (*dan <= 28 && PrestupnaGodina(*godina)) *BrDana -= 366;
-					else if (*dan == 29) { (*dan)--; *BrDana -= 366; }
-					else *BrDana -= 365;
-				}
-				(*godina)++;
+	void GodineNaprijed(int* BrDana) {
+		while (*BrDana >= 365) {
+			if (*mjesec != 2) {
+				if ((*mjesec == 1 && PrestupnaGodina(*godina)) || (*mjesec != 1 && PrestupnaGodina(*godina + 1))) *BrDana -= 366;
+				else *BrDana -= 365;
 			}
-		}
-		else {
-			while (*BrDana >= 365) {
-				if (*mjesec != 2) {
-					if ((*mjesec == 1 && PrestupnaGodina(*godina)) || PrestupnaGodina(*godina - 1)) *BrDana -= 366;
-					else *BrDana -= 365;
-				}
-				else if (*mjesec == 2) {
-					if (*dan <= 28 && PrestupnaGodina(*godina)) *BrDana -= 366;
-					else if (*dan == 29) { (*dan)--; *BrDana -= 366; }
-					else *BrDana -= 365;
-				}
-				(*godina)--;
+			else if (*mjesec == 2) {
+				if (*dan <= 28 && PrestupnaGodina(*godina)) *BrDana -= 366;
+				else if (*dan == 29) { (*dan)--; *BrDana -= 366; }
+				else *BrDana -= 365;
 			}
+			(*godina)++;
 		}
 	}
-	void MjesecRebalans(int *BrDana, bool nazad = false) {
-		if (!nazad) {
-			while (*BrDana >= 28) {
-				*BrDana -= BrojDanaUMjesecu(*mjesec);
-				(*mjesec)++;
-				if (*mjesec > 12)
-					JanuarInkrement();
-			}
-		}
-		else {
-			while (*BrDana >= 28) {
-				*BrDana -= BrojDanaUMjesecu(*mjesec);
-				(*mjesec)--;
-				if (*mjesec < 1)
-					DecembarDekrement();
-			}
+	void MjesecNaprijed(int* BrDana) {
+		while (*BrDana >= 28) {
+			*BrDana -= BrojDanaUMjesecu((*mjesec)++);
+			if (*mjesec > 12) JanuarInkrement();
 		}
 	}
-	void DaniRebalans(int *BrDana, bool nazad = false) {
-		if (!nazad) {
-			while (*BrDana != 0) {
-				if (*BrDana < 0)
-					InkrementDekrementPtr(BrDana, dan);
-				else
-					InkrementDekrementPtr(dan, BrDana);
-			}
-			if (*dan > BrojDanaUMjesecu(*mjesec)) {
-				(*mjesec)++;
-				if (*mjesec > 12)
-					JanuarInkrement();
-				*dan -= BrojDanaUMjesecu(*mjesec);
-			}
-			else if (*dan < 1) {
-				(*mjesec)--;
-				if (*mjesec < 1)
-					DecembarDekrement();
-				*dan += BrojDanaUMjesecu(*mjesec);
-			}
+	void RebalansDana(int* BrDana) {
+		while (*BrDana != 0) {
+			if (*BrDana < 0) InkrementDekrement(BrDana, dan);
+			else InkrementDekrement(dan, BrDana);
 		}
-		else {
-			if (*BrDana < 0)
-				*dan += *BrDana;
-			else
-				*dan -= *BrDana;
-			if (*dan < 1) {
-				(*mjesec)--;
-				if (*mjesec < 1)
-					DecembarDekrement();
-				*dan += BrojDanaUMjesecu(*mjesec);
-			}
+		if (*dan > BrojDanaUMjesecu(*mjesec)) {
+			*dan -= BrojDanaUMjesecu(*mjesec);
+			(*mjesec)++;
+			if (*mjesec > 12) JanuarInkrement();
 		}
 	}
 };
 int main() {
 	Datum d;
-	d.NaprijedRacunanje(367, true);
+	d.NaprijedRacunanje(7854644);
 }
