@@ -37,10 +37,18 @@ class Datum {
 		(* ZaInkrement)++;
 		(* ZaDekrement)--;
 	}
+	void JanuarInkrement() {
+		*mjesec = 1;
+		(*godina)++;
+	}
+	void DecembarDekrement() {
+		*mjesec = 12;
+		(*godina)--;
+	}
 public:
 	Datum() {
-		dan = new int(8);
-		mjesec = new int(4);
+		dan = new int(1);
+		mjesec = new int(1);
 		godina = new int(2022);
 	}
 	Datum(int UneseniDan, int UneseniMjesec, int UnesenaGodina) {
@@ -53,20 +61,35 @@ public:
 		delete mjesec; mjesec = NULL;
 		delete godina; godina = NULL;
 	}
-	void NaprijedRacunanje(int BrDanaNaprijed) {
-		BrDanaNaprijed += (* dan);
-		(*mjesec)--;
-		(*dan) = BrojDanaUMjesecu(*mjesec);
-		if (BrDanaNaprijed >= 365)
-			GodineNaprijed(&BrDanaNaprijed);
-		if (BrDanaNaprijed >= 28)
-			MjesecNaprijed(&BrDanaNaprijed);
-		if (*dan > BrojDanaUMjesecu(*mjesec)) {
+	void NaprijedRacunanje(int BrDanaNaprijed, bool nazad = false) {
+		if (!nazad) {
+			BrDanaNaprijed += (*dan);
+			(*mjesec)--;
+			if (*mjesec < 1) DecembarDekrement();
+			(*dan) = BrojDanaUMjesecu(*mjesec);
+			if (BrDanaNaprijed >= 365)
+				GodineRebalans(&BrDanaNaprijed, nazad);
+			if (BrDanaNaprijed >= 28)
+				MjesecRebalans(&BrDanaNaprijed, nazad);
 			while (*dan > BrojDanaUMjesecu(*mjesec))
 				InkrementDekrementPtr(&BrDanaNaprijed, dan);
+			DaniRebalans(&BrDanaNaprijed, nazad);
+			cout << "Ispis novog datuma " << *dan << "." << *mjesec << "." << *godina << endl;
 		}
-		RebalansDana(&BrDanaNaprijed);
-		cout << "Ispis novog datuma " << *dan << "." << *mjesec << "." << *godina << endl;
+		else {
+			BrDanaNaprijed += (*dan);
+			(*mjesec)--;
+			if (*mjesec < 1) DecembarDekrement();
+			(*dan) = BrojDanaUMjesecu(*mjesec);
+			if (BrDanaNaprijed >= 365)
+				GodineRebalans(&BrDanaNaprijed, nazad);
+			if (BrDanaNaprijed >= 28)
+				MjesecRebalans(&BrDanaNaprijed, nazad);
+			while (*dan > BrojDanaUMjesecu(*mjesec))
+				InkrementDekrementPtr(&BrDanaNaprijed, dan);
+			DaniRebalans(&BrDanaNaprijed, nazad);
+			cout << "Ispis novog datuma " << *dan << "." << *mjesec << "." << *godina << endl;
+		}
 	}
 	void NazadRacunanje() {
 
@@ -78,48 +101,90 @@ private:
 	bool PrestupnaGodina(int GodinaProvjera) {
 		return ((GodinaProvjera % 4 == 0 && GodinaProvjera % 100 != 0) || GodinaProvjera % 400 == 0);
 	}
-	void GodineNaprijed(int *BrDana) {
-		while (*BrDana >= 365) {
-			if (*mjesec != 2) {
-				if ((*mjesec == 1 && PrestupnaGodina(*godina)) || PrestupnaGodina(*godina + 1)) *BrDana -= 366;
-				else *BrDana -= 365;
-			}
-			else if(*mjesec == 2) {
-				if (*dan <= 28 && PrestupnaGodina(*godina)) *BrDana -= 366;
-				else if (*dan == 29) { (*dan)--; *BrDana -= 366; }
-				else *BrDana -= 365;
-			}
-			(*godina)++;
-		}
-	}
-	void MjesecNaprijed(int *BrDana) {
-		while (*BrDana >= 28) {
-			*BrDana -= BrojDanaUMjesecu(*mjesec);
-			(*mjesec)++;
-			if (*mjesec > 12) {
-				*mjesec = 1;
+	void GodineRebalans(int* BrDana, bool nazad = false) {
+		if (!nazad) {
+			while (*BrDana >= 365) {
+				if (*mjesec != 2) {
+					if ((*mjesec == 1 && PrestupnaGodina(*godina)) || PrestupnaGodina(*godina + 1)) *BrDana -= 366;
+					else *BrDana -= 365;
+				}
+				else if (*mjesec == 2) {
+					if (*dan <= 28 && PrestupnaGodina(*godina)) *BrDana -= 366;
+					else if (*dan == 29) { (*dan)--; *BrDana -= 366; }
+					else *BrDana -= 365;
+				}
 				(*godina)++;
 			}
 		}
+		else {
+			while (*BrDana >= 365) {
+				if (*mjesec != 2) {
+					if ((*mjesec == 1 && PrestupnaGodina(*godina)) || PrestupnaGodina(*godina - 1)) *BrDana -= 366;
+					else *BrDana -= 365;
+				}
+				else if (*mjesec == 2) {
+					if (*dan <= 28 && PrestupnaGodina(*godina)) *BrDana -= 366;
+					else if (*dan == 29) { (*dan)--; *BrDana -= 366; }
+					else *BrDana -= 365;
+				}
+				(*godina)--;
+			}
+		}
 	}
-	void RebalansDana(int *BrDana) {
-		while (*BrDana != 0) {
+	void MjesecRebalans(int *BrDana, bool nazad = false) {
+		if (!nazad) {
+			while (*BrDana >= 28) {
+				*BrDana -= BrojDanaUMjesecu(*mjesec);
+				(*mjesec)++;
+				if (*mjesec > 12)
+					JanuarInkrement();
+			}
+		}
+		else {
+			while (*BrDana >= 28) {
+				*BrDana -= BrojDanaUMjesecu(*mjesec);
+				(*mjesec)--;
+				if (*mjesec < 1)
+					DecembarDekrement();
+			}
+		}
+	}
+	void DaniRebalans(int *BrDana, bool nazad = false) {
+		if (!nazad) {
+			while (*BrDana != 0) {
+				if (*BrDana < 0)
+					InkrementDekrementPtr(BrDana, dan);
+				else
+					InkrementDekrementPtr(dan, BrDana);
+			}
+			if (*dan > BrojDanaUMjesecu(*mjesec)) {
+				(*mjesec)++;
+				if (*mjesec > 12)
+					JanuarInkrement();
+				*dan -= BrojDanaUMjesecu(*mjesec);
+			}
+			else if (*dan < 1) {
+				(*mjesec)--;
+				if (*mjesec < 1)
+					DecembarDekrement();
+				*dan += BrojDanaUMjesecu(*mjesec);
+			}
+		}
+		else {
 			if (*BrDana < 0)
-				InkrementDekrementPtr(BrDana, dan);
+				*dan += *BrDana;
 			else
-				InkrementDekrementPtr(dan, BrDana);
-		}
-		if (*dan > BrojDanaUMjesecu(*mjesec)) {
-			*dan -= BrojDanaUMjesecu(*mjesec);
-			(*mjesec)++;
-			if (*mjesec > 12) {
-				*mjesec = 1;
-				(*godina)++;
+				*dan -= *BrDana;
+			if (*dan < 1) {
+				(*mjesec)--;
+				if (*mjesec < 1)
+					DecembarDekrement();
+				*dan += BrojDanaUMjesecu(*mjesec);
 			}
 		}
 	}
 };
 int main() {
 	Datum d;
-	d.NaprijedRacunanje(2000003);
+	d.NaprijedRacunanje(367, true);
 }
